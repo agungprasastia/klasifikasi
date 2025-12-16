@@ -7,15 +7,15 @@ import os
 # Konfigurasi halaman
 # ================================
 st.set_page_config(
-    page_title="HR Attrition Prediction",
+    page_title="Adult Income Prediction",
     layout="centered"
 )
 
-st.title("🔍 Prediksi Attrition Karyawan")
+st.title("🔍 Prediksi Tingkat Pendapatan")
 st.write(
     "Aplikasi ini mendemonstrasikan model klasifikasi "
     "Random Forest dan Decision Tree untuk memprediksi "
-    "attrition karyawan."
+    "tingkat pendapatan individu (<=50K atau >50K)."
 )
 
 st.divider()
@@ -31,14 +31,14 @@ model_option = st.radio(
 )
 
 MODEL_PATHS = {
-    "Random Forest": "model_rf_hr_attrition.pkl",
-    "Decision Tree": "model_dt_hr_attrition.pkl"
+    "Random Forest": "model_rf_adult_income.pkl",
+    "Decision Tree": "model_dt_adult_income.pkl"
 }
 
 model_path = MODEL_PATHS[model_option]
 
 # ================================
-# Load model
+# Load Model
 # ================================
 if not os.path.exists(model_path):
     st.error(f"❌ File model '{model_path}' tidak ditemukan.")
@@ -52,7 +52,7 @@ st.divider()
 # ================================
 # Load Dataset
 # ================================
-DATASET_PATH = "WA_Fn-UseC_-HR-Employee-Attrition.csv"
+DATASET_PATH = "adult.csv"
 
 if not os.path.exists(DATASET_PATH):
     st.error(f"❌ File dataset '{DATASET_PATH}' tidak ditemukan.")
@@ -60,38 +60,41 @@ if not os.path.exists(DATASET_PATH):
 
 data = pd.read_csv(DATASET_PATH)
 
+# Bersihkan spasi (penting untuk Adult dataset)
+for col in data.select_dtypes(include="object").columns:
+    data[col] = data[col].str.strip()
+
 st.subheader("📊 Preview Dataset")
 st.dataframe(data.head())
-st.write(f"Jumlah data: **{data.shape[0]} baris**")
 
 st.divider()
 
 # ================================
 # Prediksi
 # ================================
-if st.button("🔮 Prediksi Attrition"):
+if st.button("🔮 Prediksi Pendapatan"):
     try:
         # Drop target jika ada
-        X_data = data.drop("Attrition", axis=1, errors="ignore")
+        X_data = data.drop("income", axis=1, errors="ignore")
 
         predictions = model.predict(X_data)
 
         result = data.copy()
-        result["Prediksi_Attrition"] = predictions
+        result["Prediksi_Income"] = predictions
 
         st.subheader("📈 Hasil Prediksi")
         st.dataframe(result.head(20))
 
         st.success("✅ Prediksi berhasil dilakukan!")
-        st.write("Jumlah karyawan diprediksi **resign**:", (predictions == "Yes").sum())
-        st.write("Jumlah karyawan diprediksi **tidak resign**:", (predictions == "No").sum())
+        st.write("Jumlah prediksi pendapatan >50K:", (predictions == ">50K").sum())
+        st.write("Jumlah prediksi pendapatan ≤50K:", (predictions == "<=50K").sum())
 
     except Exception as e:
         st.error("❌ Terjadi kesalahan saat melakukan prediksi")
         st.code(str(e))
         st.warning(
             "Pastikan struktur kolom dataset sama "
-            "dengan dataset yang digunakan saat training."
+            "dengan dataset yang digunakan saat training model."
         )
 
 # ================================
@@ -101,5 +104,5 @@ st.divider()
 st.caption(
     f"Model Aktif: {model_option} | "
     "Tipe: Klasifikasi Biner | "
-    "Topik: Employee Attrition Prediction"
+    "Topik: Adult Census Income Prediction"
 )
